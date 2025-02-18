@@ -38,3 +38,7 @@ class MyApp(App):
 
 if __name__ == "__main__":
     MyApp().run()
+
+
+# Reqirements
+# pip install kivy - put into command prompt to install kivy (dependancy)

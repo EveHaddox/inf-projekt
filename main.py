@@ -1,3 +1,4 @@
+import string
 from kivy.app import App
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
@@ -27,7 +28,24 @@ class InputScreen(GridLayout):
         self.add_widget(self.print_button)
 
     def print_text(self, instance):
-        print(self.text_input.text)
+        txt = list(self.text_input.text)
+        solved = ""
+
+        for x in txt:
+            x = x.capitalize()
+            if x == "A":
+                solved = solved + "U"
+            elif x == "T":
+                solved = solved + "A"
+            elif x == "C":
+                solved = solved + "G"
+            elif x == "G":
+                solved = solved + "C"
+            else:
+                print("wrong letter")
+                return False
+
+        print(solved)
 
 
 class MyApp(App):

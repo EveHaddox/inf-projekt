@@ -70,6 +70,55 @@ class WelcomeScreen(Screen):
             self.manager.user_gender = self.other_gender_input.text.strip()
         else:
             self.manager.user_gender = self.gender_spinner.text
+        self.manager.current = "intro"
+
+class IntroScreen(Screen):
+    def __init__(self, **kwargs):
+        super(IntroScreen, self).__init__(**kwargs)
+        self.layout = BoxLayout(orientation='vertical', padding=10, spacing=10)
+
+        self.welcome_label = Label(text="", font_size='40sp', color=(0.8, 0.8, 0.8, 1))
+        self.layout.add_widget(self.welcome_label)
+
+        info_label = Label(
+            text="Type in DNA and the app will analyze it for you.",
+            font_size='20sp',
+            color=(0.8, 0.8, 0.8, 1)
+        )
+        self.layout.add_widget(info_label)
+
+        start_button = Button(
+            text="Start",
+            font_size='18sp',
+            size_hint_y=None,
+            height=50,
+            background_color=(0.8, 0.6, 0.2, 1)
+        )
+        start_button.bind(on_press=self.start_app)
+        self.layout.add_widget(start_button)
+
+        self.add_widget(self.layout)
+
+    def on_enter(self, *args):
+        if self.manager.user_gender == "Male":
+            title = "Mister"
+        elif self.manager.user_gender == "Female":
+            title = "Miss"
+
+        if self.manager.user_gender in ["Male", "Female"]:
+            self.welcome_label.text = (
+                f"{title} {self.manager.user_name}\n"
+                f"Welcome to kodinator!"
+            )
+        else:
+            self.welcome_label.text = (
+                f"Creature known as '{self.manager.user_gender}'\n"
+                f"Welcome to kodinator!"
+            )
+            
+        super().on_enter(*args)
+
+    def start_app(self, instance):
         self.manager.current = "input_screen"
 
 class InputScreen(Screen):
@@ -77,27 +126,31 @@ class InputScreen(Screen):
         super(InputScreen, self).__init__(**kwargs)
         layout = GridLayout(cols=1, padding=[10, 10, 10, 10], spacing=10)
         
-        greeting_label = Label(text="Enter Text Below:", font_size='20sp', color=(0.8, 0.8, 0.8, 1))
+        greeting_label = Label(text="Enter DNA Below:", font_size='40sp', color=(0.8, 0.8, 0.8, 1))
         layout.add_widget(greeting_label)
         
+        self.result_label = Label(text="", font_size='20sp', color=(0.8, 0.8, 0.8, 1))
+        layout.add_widget(self.result_label)
+
         self.text_input = TextInput(multiline=False, font_size='18sp', size_hint_y=None, height=40,
                                     background_color=(0.2, 0.2, 0.2, 1))
         layout.add_widget(self.text_input)
         
         self.print_button = Button(text="Print Text", font_size='18sp', size_hint_y=None, height=50,
-                                   background_color=(0.8, 0.6, 0.2, 1))
+        background_color=(0.8, 0.6, 0.2, 1))
+        
         self.print_button.bind(on_press=self.print_text)
         layout.add_widget(self.print_button)
         
         self.add_widget(layout)
     
     def print_text(self, instance):
-        # Output the name and gender along with the processed text.
         print("User Name:", self.manager.user_name)
         print("User Gender:", self.manager.user_gender)
         
         txt = list(self.text_input.text)
         solved = ""
+
         for x in txt:
             x = x.capitalize()
             if x == "A":
@@ -109,9 +162,10 @@ class InputScreen(Screen):
             elif x == "G":
                 solved += "C"
             else:
-                print("wrong letter")
+                self.result_label.text = f"wrong letter"
                 return False
-        print(solved)
+            
+        self.result_label.text = f"Solved: {solved}"
 
 class MyApp(App):
     def build(self):
@@ -120,6 +174,7 @@ class MyApp(App):
         sm.user_name = ""
         sm.user_gender = ""
         sm.add_widget(WelcomeScreen(name="welcome"))
+        sm.add_widget(IntroScreen(name="intro"))
         sm.add_widget(InputScreen(name="input_screen"))
         sm.current = "welcome"
         return sm

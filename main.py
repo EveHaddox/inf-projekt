@@ -126,7 +126,7 @@ class InputScreen(Screen):
         super(InputScreen, self).__init__(**kwargs)
         layout = GridLayout(cols=1, padding=[10, 10, 10, 10], spacing=10)
         
-        greeting_label = Label(text="Enter DNA Below:", font_size='40sp', color=(0.8, 0.8, 0.8, 1))
+        greeting_label = Label(text="Enter DNA sequences Below:", font_size='40sp', color=(0.8, 0.8, 0.8, 1))
         layout.add_widget(greeting_label)
         
         self.result_label = Label(text="", font_size='20sp', color=(0.8, 0.8, 0.8, 1))

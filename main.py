@@ -151,6 +151,25 @@ class InputScreen(Screen):
         txt = list(self.text_input.text)
         solved = ""
 
+        codon_table = {
+            'UUU': 'Phenylalanine', 'UUC': 'Phenylalanine', 'UUA': 'Leucine', 'UUG': 'Leucine',
+            'UCU': 'Serine', 'UCC': 'Serine', 'UCA': 'Serine', 'UCG': 'Serine',
+            'UAU': 'Tyrosine', 'UAC': 'Tyrosine', 'UAA': 'STOP', 'UAG': 'STOP',
+            'UGU': 'Cysteine', 'UGC': 'Cysteine', 'UGA': 'STOP', 'UGG': 'Tryptophan',
+            'CUU': 'Leucine', 'CUC': 'Leucine', 'CUA': 'Leucine', 'CUG': 'Leucine',
+            'CCU': 'Proline', 'CCC': 'Proline', 'CCA': 'Proline', 'CCG': 'Proline',
+            'CAU': 'Histidine', 'CAC': 'Histidine', 'CAA': 'Glutamine', 'CAG': 'Glutamine',
+            'CGU': 'Arginine', 'CGC': 'Arginine', 'CGA': 'Arginine', 'CGG': 'Arginine',
+            'AUU': 'Isoleucine', 'AUC': 'Isoleucine', 'AUA': 'Isoleucine', 'AUG': 'Methionine',
+            'ACU': 'Threonine', 'ACC': 'Threonine', 'ACA': 'Threonine', 'ACG': 'Threonine',
+            'AAU': 'Asparagine', 'AAC': 'Asparagine', 'AAA': 'Lysine', 'AAG': 'Lysine',
+            'AGU': 'Serine', 'AGC': 'Serine', 'AGA': 'Arginine', 'AGG': 'Arginine',
+            'GUU': 'Valine', 'GUC': 'Valine', 'GUA': 'Valine', 'GUG': 'Valine',
+            'GCU': 'Alanine', 'GCC': 'Alanine', 'GCA': 'Alanine', 'GCG': 'Alanine',
+            'GAU': 'Aspartic acid', 'GAC': 'Aspartic acid', 'GAA': 'Glutamic acid', 'GAG': 'Glutamic acid',
+            'GGU': 'Glycine', 'GGC': 'Glycine', 'GGA': 'Glycine', 'GGG': 'Glycine'
+        }
+
         for x in txt:
             x = x.capitalize()
             if x == "A":
@@ -162,10 +181,25 @@ class InputScreen(Screen):
             elif x == "G":
                 solved += "C"
             else:
-                self.result_label.text = f"wrong letter"
+                self.result_label.text = "wrong letter"
+            return False
+
+        self.result_label.text = f"mRNA: {solved}"
+
+        # Decode codons
+        codons = [solved[i:i+3] for i in range(0, len(solved), 3)]
+        protein = []
+        for codon in codons:
+            if codon in codon_table:
+                amino_acid = codon_table[codon]
+                if amino_acid == "STOP":
+                    break
+                protein.append(amino_acid)
+            else:
+                self.result_label.text = "Invalid codon sequence"
                 return False
-            
-        self.result_label.text = f"Solved: {solved}"
+
+        self.protein_label.text = f"Protein: {'-'.join(protein)}"
 
 class MyApp(App):
     def build(self):

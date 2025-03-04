@@ -108,12 +108,12 @@ class IntroScreen(Screen):
         if self.manager.user_gender in ["Male", "Female"]:
             self.welcome_label.text = (
                 f"{title} {self.manager.user_name}\n"
-                f"Welcome to kodinator!"
+                f"Welcome to Kodinator!"
             )
         else:
             self.welcome_label.text = (
                 f"Creature known as '{self.manager.user_gender}'\n"
-                f"Welcome to kodinator!"
+                f"Welcome to Kodinator!"
             )
             
         super().on_enter(*args)

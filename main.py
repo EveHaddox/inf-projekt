@@ -131,6 +131,9 @@ class InputScreen(Screen):
         
         self.result_label = Label(text="", font_size='20sp', color=(0.8, 0.8, 0.8, 1))
         layout.add_widget(self.result_label)
+        
+        self.protein_label = Label(text="", font_size='20sp', color=(0.8, 0.8, 0.8, 1))
+        layout.add_widget(self.protein_label)
 
         self.text_input = TextInput(multiline=False, font_size='18sp', size_hint_y=None, height=40,
                                     background_color=(0.2, 0.2, 0.2, 1))
@@ -166,10 +169,7 @@ class InputScreen(Screen):
             'AGU': 'Serine', 'AGC': 'Serine', 'AGA': 'Arginine', 'AGG': 'Arginine',
             'GUU': 'Valine', 'GUC': 'Valine', 'GUA': 'Valine', 'GUG': 'Valine',
             'GCU': 'Alanine', 'GCC': 'Alanine', 'GCA': 'Alanine', 'GCG': 'Alanine',
-            'GAU': 'Aspartic acid', 'GAC': 'Aspartic acid', 'GAA': 'Glutamic acid', 'GAG': 'Glutamic acid',
-            'GGU': 'Glycine', 'GGC': 'Glycine', 'GGA': 'Glycine', 'GGG': 'Glycine'
-        }
-
+            'GAU': 'Aspartic acid', 'GAC': 'Aspartic acid', 'GAA': 'Glutamic acid', 'GAG': 'Glutamic acid',}
         for x in txt:
             x = x.capitalize()
             if x == "A":
@@ -181,25 +181,39 @@ class InputScreen(Screen):
             elif x == "G":
                 solved += "C"
             else:
-                self.result_label.text = "wrong letter"
-            return False
+                self.result_label.text = "Wrong letter"
+                return False
+
+        # Continue processing if all characters are valid
 
         self.result_label.text = f"mRNA: {solved}"
 
         # Decode codons
         codons = [solved[i:i+3] for i in range(0, len(solved), 3)]
         protein = []
+        has_stop_codon = False
+        
         for codon in codons:
+            if len(codon) < 3:
+                # Skip incomplete codons at the end
+                continue
             if codon in codon_table:
                 amino_acid = codon_table[codon]
                 if amino_acid == "STOP":
+                    has_stop_codon = True
                     break
                 protein.append(amino_acid)
             else:
                 self.result_label.text = "Invalid codon sequence"
                 return False
 
-        self.protein_label.text = f"Protein: {'-'.join(protein)}"
+        if protein:
+            self.protein_label.text = f"Protein: {'-'.join(protein)}"
+        else:
+            if has_stop_codon:
+                self.protein_label.text = "Protein: None (sequence contains only STOP codon)"
+            else:
+                self.protein_label.text = "Protein: None"
 
 class MyApp(App):
     def build(self):

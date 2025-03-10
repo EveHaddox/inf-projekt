@@ -107,12 +107,12 @@ class IntroScreen(Screen):
         if self.manager.user_gender in ["Male", "Female"]:
             self.welcome_label.text = (
                 f"{title} {self.manager.user_name}\n"
-                f"Welcome to kodinator!"
+                f"Welcome to Kodinator!"
             )
         else:
             self.welcome_label.text = (
                 f"Creature known as '{self.manager.user_gender}'\n"
-                f"Welcome to kodinator!"
+                f"Welcome to Kodinator!"
             )
             
         super().on_enter(*args)
@@ -125,11 +125,14 @@ class InputScreen(Screen):
         super(InputScreen, self).__init__(**kwargs)
         layout = GridLayout(cols=1, padding=[10, 10, 10, 10], spacing=10)
         
-        greeting_label = Label(text="Enter DNA Below:", font_size='40sp', color=(0.8, 0.8, 0.8, 1))
+        greeting_label = Label(text="Enter DNA sequences Below:", font_size='40sp', color=(0.8, 0.8, 0.8, 1))
         layout.add_widget(greeting_label)
         
         self.result_label = Label(text="", font_size='20sp', color=(0.8, 0.8, 0.8, 1))
         layout.add_widget(self.result_label)
+        
+        self.protein_label = Label(text="", font_size='20sp', color=(0.8, 0.8, 0.8, 1))
+        layout.add_widget(self.protein_label)
 
         self.text_input = TextInput(multiline=False, font_size='18sp', size_hint_y=None, height=40,
                                     background_color=(0.2, 0.2, 0.2, 1))
@@ -150,6 +153,22 @@ class InputScreen(Screen):
         txt = list(self.text_input.text)
         solved = ""
 
+        codon_table = {
+            'UUU': 'Phenylalanine', 'UUC': 'Phenylalanine', 'UUA': 'Leucine', 'UUG': 'Leucine',
+            'UCU': 'Serine', 'UCC': 'Serine', 'UCA': 'Serine', 'UCG': 'Serine',
+            'UAU': 'Tyrosine', 'UAC': 'Tyrosine', 'UAA': 'STOP', 'UAG': 'STOP',
+            'UGU': 'Cysteine', 'UGC': 'Cysteine', 'UGA': 'STOP', 'UGG': 'Tryptophan',
+            'CUU': 'Leucine', 'CUC': 'Leucine', 'CUA': 'Leucine', 'CUG': 'Leucine',
+            'CCU': 'Proline', 'CCC': 'Proline', 'CCA': 'Proline', 'CCG': 'Proline',
+            'CAU': 'Histidine', 'CAC': 'Histidine', 'CAA': 'Glutamine', 'CAG': 'Glutamine',
+            'CGU': 'Arginine', 'CGC': 'Arginine', 'CGA': 'Arginine', 'CGG': 'Arginine',
+            'AUU': 'Isoleucine', 'AUC': 'Isoleucine', 'AUA': 'Isoleucine', 'AUG': 'Methionine',
+            'ACU': 'Threonine', 'ACC': 'Threonine', 'ACA': 'Threonine', 'ACG': 'Threonine',
+            'AAU': 'Asparagine', 'AAC': 'Asparagine', 'AAA': 'Lysine', 'AAG': 'Lysine',
+            'AGU': 'Serine', 'AGC': 'Serine', 'AGA': 'Arginine', 'AGG': 'Arginine',
+            'GUU': 'Valine', 'GUC': 'Valine', 'GUA': 'Valine', 'GUG': 'Valine',
+            'GCU': 'Alanine', 'GCC': 'Alanine', 'GCA': 'Alanine', 'GCG': 'Alanine',
+            'GAU': 'Aspartic acid', 'GAC': 'Aspartic acid', 'GAA': 'Glutamic acid', 'GAG': 'Glutamic acid',}
         for x in txt:
             x = x.capitalize()
             if x == "A":
@@ -161,10 +180,39 @@ class InputScreen(Screen):
             elif x == "G":
                 solved += "C"
             else:
-                self.result_label.text = f"wrong letter"
+                self.result_label.text = "Wrong letter"
                 return False
-            
-        self.result_label.text = f"Solved: {solved}"
+
+        # Continue processing if all characters are valid
+
+        self.result_label.text = f"mRNA: {solved}"
+
+        # Decode codons
+        codons = [solved[i:i+3] for i in range(0, len(solved), 3)]
+        protein = []
+        has_stop_codon = False
+        
+        for codon in codons:
+            if len(codon) < 3:
+                # Skip incomplete codons at the end
+                continue
+            if codon in codon_table:
+                amino_acid = codon_table[codon]
+                if amino_acid == "STOP":
+                    has_stop_codon = True
+                    break
+                protein.append(amino_acid)
+            else:
+                self.result_label.text = "Invalid codon sequence"
+                return False
+
+        if protein:
+            self.protein_label.text = f"Protein: {'-'.join(protein)}"
+        else:
+            if has_stop_codon:
+                self.protein_label.text = "Protein: None (sequence contains only STOP codon)"
+            else:
+                self.protein_label.text = "Protein: None"
 
 class MyApp(App):
     def build(self):

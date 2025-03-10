@@ -9,7 +9,7 @@ from kivy.uix.spinner import Spinner
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.core.window import Window
 
-# Set the background color
+# bg color
 Window.clearcolor = (0.1, 0.1, 0.1, 1)
 
 class WelcomeScreen(Screen):
@@ -64,7 +64,6 @@ class WelcomeScreen(Screen):
             self.other_gender_input.disabled = True
 
     def start_app(self, instance):
-        # Save the name and gender into the screen manager for use in other screens.
         self.manager.user_name = self.name_input.text.strip()
         if self.gender_spinner.text == "Other":
             self.manager.user_gender = self.other_gender_input.text.strip()
@@ -170,7 +169,6 @@ class InputScreen(Screen):
 class MyApp(App):
     def build(self):
         sm = ScreenManager()
-        # Create shared variables for name and gender.
         sm.user_name = ""
         sm.user_gender = ""
         sm.add_widget(WelcomeScreen(name="welcome"))

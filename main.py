@@ -275,3 +275,7 @@ class MyApp(App):
 
 if __name__ == "__main__":
     MyApp().run()
+
+
+# for decryption RSA/ECB/OAEPWithSHA-1AndMGF1Padding in https://www.devglan.com/online-tools/rsa-encryption-decryption
+# dependancies: pip install kivy pycryptodome

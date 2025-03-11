@@ -1,4 +1,5 @@
-import string
+#import string  # Removed unused import
+import base64
 from kivy.app import App
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.boxlayout import BoxLayout
@@ -8,6 +9,11 @@ from kivy.uix.button import Button
 from kivy.uix.spinner import Spinner
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.core.window import Window
+from kivy.core.clipboard import Clipboard
+
+# RSA encryption imports from PyCryptodome
+from Crypto.PublicKey import RSA
+from Crypto.Cipher import PKCS1_OAEP
 
 # bg color
 Window.clearcolor = (0.1, 0.1, 0.1, 1)
@@ -55,7 +61,7 @@ class WelcomeScreen(Screen):
         
         self.add_widget(self.layout)
     
-    def on_gender_change(self, spinner, text):
+    def on_gender_change(self, _, text):
         if text == "Other":
             self.other_gender_input.opacity = 1
             self.other_gender_input.disabled = False
@@ -63,7 +69,7 @@ class WelcomeScreen(Screen):
             self.other_gender_input.opacity = 0
             self.other_gender_input.disabled = True
 
-    def start_app(self, instance):
+    def start_app(self, _):
         self.manager.user_name = self.name_input.text.strip()
         if self.gender_spinner.text == "Other":
             self.manager.user_gender = self.other_gender_input.text.strip()
@@ -96,6 +102,21 @@ class IntroScreen(Screen):
         start_button.bind(on_press=self.start_app)
         self.layout.add_widget(start_button)
 
+        # Button to show private key
+        private_key_button = Button(
+            text="Copy Private Key",
+            font_size='18sp',
+            size_hint_y=None,
+            height=50,
+            background_color=(0.8, 0.6, 0.2, 1)
+        )
+        private_key_button.bind(on_press=self.show_private_key)
+        self.layout.add_widget(private_key_button)
+
+        # Label to display private key (initially empty)
+        self.private_key_label = Label(text="", font_size='12sp', color=(0.8, 0.8, 0.8, 1))
+        self.layout.add_widget(self.private_key_label)
+
         self.add_widget(self.layout)
 
     def on_enter(self, *args):
@@ -103,7 +124,6 @@ class IntroScreen(Screen):
             title = "Mister"
         elif self.manager.user_gender == "Female":
             title = "Miss"
-
         if self.manager.user_gender in ["Male", "Female"]:
             self.welcome_label.text = (
                 f"{title} {self.manager.user_name}\n"
@@ -114,11 +134,17 @@ class IntroScreen(Screen):
                 f"Creature known as '{self.manager.user_gender}'\n"
                 f"Welcome to Kodinator!"
             )
-            
         super().on_enter(*args)
 
-    def start_app(self, instance):
+    def start_app(self, _):
         self.manager.current = "input_screen"
+
+    def show_private_key(self, _):
+        # Show PEM formatted private key
+        private_key_pem = self.manager.rsa_key.export_key().decode("utf-8")
+        Clipboard.copy(private_key_pem)
+        self.private_key_label.text = "Private key copied to clipboard."
+
 
 class InputScreen(Screen):
     def __init__(self, **kwargs):
@@ -138,15 +164,20 @@ class InputScreen(Screen):
                                     background_color=(0.2, 0.2, 0.2, 1))
         layout.add_widget(self.text_input)
         
-        self.print_button = Button(text="Print Text", font_size='18sp', size_hint_y=None, height=50,
-        background_color=(0.8, 0.6, 0.2, 1))
-        
+        self.print_button = Button(text="Solve", font_size='18sp', size_hint_y=None, height=50,
+                                     background_color=(0.8, 0.6, 0.2, 1))
         self.print_button.bind(on_press=self.print_text)
         layout.add_widget(self.print_button)
         
+        # Button to copy the encrypted mRNA solution
+        self.copy_button = Button(text="Copy Encrypted", font_size='18sp', size_hint_y=None, height=50,
+                                    background_color=(0.8, 0.6, 0.2, 1))
+        self.copy_button.bind(on_press=self.copy_encrypted)
+        layout.add_widget(self.copy_button)
+        
         self.add_widget(layout)
     
-    def print_text(self, instance):
+    def print_text(self, _):
         print("User Name:", self.manager.user_name)
         print("User Gender:", self.manager.user_gender)
         
@@ -168,7 +199,8 @@ class InputScreen(Screen):
             'AGU': 'Serine', 'AGC': 'Serine', 'AGA': 'Arginine', 'AGG': 'Arginine',
             'GUU': 'Valine', 'GUC': 'Valine', 'GUA': 'Valine', 'GUG': 'Valine',
             'GCU': 'Alanine', 'GCC': 'Alanine', 'GCA': 'Alanine', 'GCG': 'Alanine',
-            'GAU': 'Aspartic acid', 'GAC': 'Aspartic acid', 'GAA': 'Glutamic acid', 'GAG': 'Glutamic acid',}
+            'GAU': 'Aspartic acid', 'GAC': 'Aspartic acid', 'GAA': 'Glutamic acid', 'GAG': 'Glutamic acid',
+        }
         for x in txt:
             x = x.capitalize()
             if x == "A":
@@ -183,8 +215,6 @@ class InputScreen(Screen):
                 self.result_label.text = "Wrong letter"
                 return False
 
-        # Continue processing if all characters are valid
-
         self.result_label.text = f"mRNA: {solved}"
 
         # Decode codons
@@ -194,7 +224,6 @@ class InputScreen(Screen):
         
         for codon in codons:
             if len(codon) < 3:
-                # Skip incomplete codons at the end
                 continue
             if codon in codon_table:
                 amino_acid = codon_table[codon]
@@ -213,12 +242,31 @@ class InputScreen(Screen):
                 self.protein_label.text = "Protein: None (sequence contains only STOP codon)"
             else:
                 self.protein_label.text = "Protein: None"
+    
+    def copy_encrypted(self, _):
+        if not self.result_label.text.startswith("mRNA:"):
+            self.result_label.text = "No mRNA result to encrypt"
+            return
+        mRNA = self.result_label.text[len("mRNA:"):].strip()
+        try:
+            encrypted = self.manager.public_cipher.encrypt(mRNA.encode("utf-8"))
+        except ValueError as e:
+            self.result_label.text = f"Encryption error: {str(e)}"
+            return
+        encrypted_b64 = base64.b64encode(encrypted).decode("utf-8")
+        Clipboard.copy(encrypted_b64)
+        self.result_label.text += "\n[Encrypted solution copied]"
 
 class MyApp(App):
     def build(self):
         sm = ScreenManager()
         sm.user_name = ""
         sm.user_gender = ""
+        # Generate RSA key pair once and store in the ScreenManager.
+        sm.rsa_key = RSA.generate(2048)
+        sm.public_cipher = PKCS1_OAEP.new(sm.rsa_key.publickey())
+        sm.private_cipher = PKCS1_OAEP.new(sm.rsa_key)
+        
         sm.add_widget(WelcomeScreen(name="welcome"))
         sm.add_widget(IntroScreen(name="intro"))
         sm.add_widget(InputScreen(name="input_screen"))
@@ -227,6 +275,3 @@ class MyApp(App):
 
 if __name__ == "__main__":
     MyApp().run()
-
-# Requirements:
-# pip install kivy
